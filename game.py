@@ -180,14 +180,64 @@ class Enemy:
                 self.run_frame = (self.run_frame + 1) % len(self.run_images_right)
                 self.animation_timer = 0
 
+#------------------------- Kelas BossEnemy -------------------------
+class BossEnemy(Enemy):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.rect = pygame.Rect(x, y, 120, 120)  # Ukuran lebih besar
+        self.max_hp = 150
+        self.current_hp = 150
+        self.strength = 20
+        self.move_range = 200
+        self.is_boss = True
+
+    def attack(self, character_rect, character_hp):
+        if not self.is_alive:
+            return character_hp
+        if self.rect.colliderect(character_rect) and self.attack_cooldown <= 0:
+            character_hp -= self.strength * 1.5  # Serangan lebih kuat
+            self.attack_cooldown = 40
+            self.attacking = True
+            self.attack_frame = 0
+            self.attack_animation_timer = 0
+            return character_hp
+        return character_hp
+
+    def draw(self, camera_x, camera_y):
+        if not self.is_alive:
+            return
+
+        # Pilih gambar animasi dan scale besar
+        if self.attacking:
+            image = self.attack_images_right[self.attack_frame] if self.direction == "right" else self.attack_images_left[self.attack_frame]
+        else:
+            image = self.run_images_right[self.run_frame] if self.direction == "right" else self.run_images_left[self.run_frame]
+
+        image = pygame.transform.scale(image, (120, 120))  # Perbesar sprite Boss
+        screen.blit(image, (self.rect.x - camera_x, self.rect.y - camera_y))
+
+        # HP Bar warna emas
+        hp_bar_width = 120
+        hp_bar_height = 10
+        hp_ratio = self.current_hp / self.max_hp
+        pygame.draw.rect(screen, (255, 215, 0), (self.rect.x - camera_x, self.rect.y - camera_y - 15, hp_bar_width * hp_ratio, hp_bar_height))
+        pygame.draw.rect(screen, (255, 255, 255), (self.rect.x - camera_x, self.rect.y - camera_y - 15, hp_bar_width, hp_bar_height), 1)
+
+        # Label BOSS
+        font = pygame.font.SysFont(None, 20)
+        label = font.render("BOSS", True, (255, 255, 255))
+        screen.blit(label, (self.rect.x - camera_x, self.rect.y - camera_y - 30))
+
+
 # ------------------------- INISIALISASI ENEMY -------------------------
 enemies = [
     Enemy(500, map_height - ground_height - 80),
     Enemy(900, map_height - ground_height - 80),
-    Enemy(1300, map_height - ground_height - 80),
+    BossEnemy(1300, map_height - ground_height - 120),  # Tambahkan boss
     Enemy(1700, map_height - ground_height - 80),
     Enemy(2100, map_height - ground_height - 80)
 ]
+
 
 # ------------------------- FUNGSI UTILITAS -------------------------
 def draw_map():
